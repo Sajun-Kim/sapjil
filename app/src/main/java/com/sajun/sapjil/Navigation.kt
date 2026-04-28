@@ -10,7 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.sajun.sapjil.screen.MainScreen
-import com.sajun.sapjil.screen.SensorTestScreen
+import com.sajun.sapjil.screen.sensor.SensorTestScreen
 
 object Route {
     const val MAIN = "main"
