@@ -37,7 +37,8 @@ android {
 
 dependencies {
     // Modules
-    implementation(project(":modules:sj-modules:designsystem"))
+    implementation(project(":modules:sj-modules:designsystem")) // Design System
+    implementation(project(":modules:sj-modules:core"))         // Core
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
