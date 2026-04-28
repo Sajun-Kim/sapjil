@@ -67,8 +67,8 @@ fun SensorTestScreen(
 
         Spacer(Modifier.weight(1f))
         PrimaryButton(
-            text = if (isUpdating) "업데이트 종료" else "업데이트 시작",
-            onClick = viewModel::toggleUpdate
+            onClick = viewModel::toggleUpdate,
+            text = if (!isUpdating) "센서 업데이트 시작" else "센서 업데이트 종료"
         )
     }
 }
