@@ -24,11 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.sajun.sapjil.ui.theme.SapjilTheme
+import com.wedrive.designsystem.R as DR
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,7 +87,7 @@ fun TestButtons(innerPadding: PaddingValues) {
             },
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue
+                containerColor = colorResource(DR.color.main_blue)
             )
         ) {
             Text("Dial test")
@@ -95,7 +97,7 @@ fun TestButtons(innerPadding: PaddingValues) {
             onClick = { call() },
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue
+                containerColor = colorResource(DR.color.main_blue)
             )
         ) {
             Text("Call test")

@@ -27,3 +27,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Sapjil"
 include(":app")
+include(":modules:sj-modules:designsystem")
