@@ -41,8 +41,11 @@ interface ISensorTestViewModel {
     val magnetometer: StateFlow<SensorData>
     val rotationVector: StateFlow<RotationData>
     val impactState: StateFlow<ImpactState>
+    val IMPACT_THRESHOLD: Float
+    val impactThreshold: StateFlow<Float>
 
     fun toggleUpdate()
+    fun setImpactThreshold(threshold: Float)
 }
 
 @HiltViewModel
@@ -78,7 +81,10 @@ class SensorTestViewModel @Inject constructor(
     // ── 충격 감지 파라미터 ──────────────────────────────────────────
     // 충격 판정 임계값 (m/s²): 중력 제거 후 순수 충격 성분 기준
     // 정지 시 0
-    private val IMPACT_THRESHOLD = 25f
+    //! 실사용 시 고정값으로 설정, 현재 테스트용이라 수정 가능
+    override val IMPACT_THRESHOLD = 80f // 실사용 시 고정값
+    private val _impactThreshold = MutableStateFlow(80f)
+    override val impactThreshold = _impactThreshold.asStateFlow()
 
     // 동일 충격이 연속으로 감지되는 것을 막기 위한 대기 시간 (ms)
     private val COOLDOWN_MS = 2000L
@@ -86,6 +92,10 @@ class SensorTestViewModel @Inject constructor(
 
     override fun toggleUpdate() {
         if (_isUpdating.value) stopSensors() else startSensors()
+    }
+
+    override fun setImpactThreshold(threshold: Float) {
+        _impactThreshold.value = threshold
     }
 
     private fun startSensors() {
@@ -172,7 +182,7 @@ class SensorTestViewModel @Inject constructor(
     private fun checkImpact(impactMagnitude: Float) {
         val now = System.currentTimeMillis()
 
-        if (impactMagnitude > IMPACT_THRESHOLD && now - lastImpactTime > COOLDOWN_MS) {
+        if (impactMagnitude > _impactThreshold.value && now - lastImpactTime > COOLDOWN_MS) {
             // 임계값 초과 + 쿨다운 경과 → 새 충격 이벤트
             lastImpactTime = now
             _impactState.value = ImpactState(isDetected = true, lastMagnitude = impactMagnitude)
@@ -198,6 +208,9 @@ object FakeSensorTestViewModel : ISensorTestViewModel {
     override val magnetometer = MutableStateFlow(SensorData())
     override val rotationVector = MutableStateFlow(RotationData())
     override val impactState = MutableStateFlow(ImpactState())
+    override val IMPACT_THRESHOLD = 80f
+    override val impactThreshold = MutableStateFlow(80f)
 
     override fun toggleUpdate() = Unit
+    override fun setImpactThreshold(threshold: Float) {}
 }

@@ -1,23 +1,34 @@
 package com.sajun.sapjil.screen.sensor
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.wedrive.designsystem.R as DR
@@ -25,6 +36,7 @@ import com.wedrive.designsystem.AppCard
 import com.wedrive.designsystem.AppStyle
 import com.wedrive.designsystem.AppTheme
 import com.wedrive.designsystem.BackTopBar
+import com.wedrive.designsystem.PrimaryBorderButton
 import com.wedrive.designsystem.PrimaryButton
 
 @Composable
@@ -32,12 +44,15 @@ fun SensorTestScreen(
     navController: NavController,
     viewModel: ISensorTestViewModel = hiltViewModel<SensorTestViewModel>()
 ) {
-    val isUpdating by viewModel.isUpdating.collectAsState()
-    val accelerometer by viewModel.accelerometer.collectAsState()
-    val gyroscope by viewModel.gyroscope.collectAsState()
-    val magnetometer by viewModel.magnetometer.collectAsState()
-    val rotationVector by viewModel.rotationVector.collectAsState()
-    val impactState by viewModel.impactState.collectAsState()
+    val isUpdating by viewModel.isUpdating.collectAsStateWithLifecycle()
+    val accelerometer by viewModel.accelerometer.collectAsStateWithLifecycle()
+    val gyroscope by viewModel.gyroscope.collectAsStateWithLifecycle()
+    val magnetometer by viewModel.magnetometer.collectAsStateWithLifecycle()
+    val rotationVector by viewModel.rotationVector.collectAsStateWithLifecycle()
+    val impactState by viewModel.impactState.collectAsStateWithLifecycle()
+    val impactThreshold by viewModel.impactThreshold.collectAsStateWithLifecycle()
+
+    var showSetThresholdDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -46,7 +61,7 @@ fun SensorTestScreen(
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         BackTopBar(
-            title = "Sensor Test",
+            title = "Sensor Test (Threshold: ${impactThreshold.toInt()}m/s²)",
             onBackClick = { navController.navigateUp() }
         )
         Spacer(Modifier.height(16.dp))
@@ -74,9 +89,27 @@ fun SensorTestScreen(
 
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.height(16.dp))
-        PrimaryButton(
-            onClick = viewModel::toggleUpdate,
-            text = if (!isUpdating) "센서 업데이트 시작" else "센서 업데이트 종료"
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            PrimaryButton(
+                onClick = { showSetThresholdDialog = true },
+                text = "Threshold 변경",
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(8.dp))
+            PrimaryButton(
+                onClick = viewModel::toggleUpdate,
+                text = if (!isUpdating) "센서 업데이트 시작" else "센서 업데이트 종료",
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+
+    if (showSetThresholdDialog) {
+        SetThresholdDialog(
+            onDismiss = { showSetThresholdDialog = false },
+            onConfirmClick = { viewModel.setImpactThreshold(it) }
         )
     }
 }
@@ -186,6 +219,81 @@ private fun ImpactStateSection(isUpdating: Boolean, impactState: ImpactState) {
 }
 
 @Composable
+fun SetThresholdDialog(
+    onDismiss: () -> Unit,
+    onConfirmClick: (Float) -> Unit
+) {
+    var inputValue by remember { mutableStateOf("") }
+
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        AppCard(
+            cornerRadiusInDp = 12,
+            containerColorRes = DR.color.bg_dialog
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+                TextField(
+                    value = inputValue,
+                    onValueChange = { newValue ->
+                        inputValue = newValue
+                    },
+                    modifier = Modifier.width(300.dp),
+                    textStyle = AppStyle.typo.bodyMedium.copy(
+                        color = colorResource(DR.color.neutral)
+                    ),
+                    placeholder = {
+                        Text(
+                            text = "변경할 Threshold 값 입력",
+                            style = AppStyle.typo.bodyMedium.copy(
+                                color = colorResource(DR.color.neutral_030)
+                            )
+                        )
+                    },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = colorResource(DR.color.bg_dialog),
+                        unfocusedContainerColor = colorResource(DR.color.bg_dialog)
+                    )
+                )
+
+                Spacer(Modifier.height(32.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    PrimaryBorderButton(
+                        onClick = { onDismiss() },
+                        text = "취소",
+                        textStyle = AppStyle.typo.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = colorResource(DR.color.main_blue)
+                        ),
+                        containerColorRes = DR.color.trans,
+                        borderColorRes = DR.color.main_blue,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    PrimaryButton(
+                        onClick = {
+                            inputValue.toFloatOrNull()?.let { onConfirmClick(it) }
+                            onDismiss()
+                        },
+                        text = "확인",
+                        textStyle = AppStyle.typo.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = colorResource(DR.color.neutral_inversion)
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 @Preview(showBackground = true)
 fun SensorTestScreenPreview() {
     AppTheme {
@@ -193,5 +301,20 @@ fun SensorTestScreenPreview() {
             viewModel = FakeSensorTestViewModel,
             navController = rememberNavController()
         )
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun SetThresholdDialogPreview() {
+    AppTheme {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            SetThresholdDialog(
+                onDismiss = {},
+                onConfirmClick = {}
+            )
+        }
     }
 }
