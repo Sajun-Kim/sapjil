@@ -28,7 +28,9 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.sajun.sapjil.Route
 import com.sajun.sapjil.ui.theme.SapjilTheme
+import com.wedrive.core.util.PermissionUtil
 import com.wedrive.designsystem.PrimaryButton
+import timber.log.Timber
 import com.wedrive.designsystem.R as DR
 
 @Composable
@@ -36,8 +38,8 @@ fun MainScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
-    val callNumber = "119"
 
+    val callNumber = "119"
     val callLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -48,16 +50,17 @@ fun MainScreen(
     }
 
     fun call() {
-        val granted = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.CALL_PHONE
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (granted) {
-            val intent = Intent(Intent.ACTION_CALL, "tel:$callNumber".toUri())
-            context.startActivity(intent)
-        } else {
-            callLauncher.launch(Manifest.permission.CALL_PHONE)
-        }
+        PermissionUtil.checkPermission(
+            context = context,
+            permissions = arrayOf(Manifest.permission.CALL_PHONE),
+            onSuccess = {
+                val intent = Intent(Intent.ACTION_CALL, "tel:$callNumber".toUri())
+                context.startActivity(intent)
+            },
+            onFailure = {
+                callLauncher.launch(Manifest.permission.CALL_PHONE)
+            }
+        )
     }
 
     Column(
@@ -69,8 +72,12 @@ fun MainScreen(
     ) {
         PrimaryButton(
             onClick = {
-                val intent = Intent(Intent.ACTION_DIAL, "tel:$callNumber".toUri())
-                context.startActivity(intent)
+                try {
+                    val intent = Intent(Intent.ACTION_DIAL, "tel:$callNumber".toUri())
+                    context.startActivity(intent)
+                } catch(e: Exception) {
+                    Timber.tag("callError").e(e)
+                }
             },
             text = "Dial test($callNumber)",
             widthInDp = 120,
