@@ -41,7 +41,6 @@ interface ISensorTestViewModel {
     val magnetometer: StateFlow<SensorData>
     val rotationVector: StateFlow<RotationData>
     val impactState: StateFlow<ImpactState>
-    val IMPACT_THRESHOLD: Float
     val impactThreshold: StateFlow<Float>
 
     fun toggleUpdate()
@@ -69,11 +68,25 @@ class SensorTestViewModel @Inject constructor(
     override val rotationVector = _rotationVector.asStateFlow()
     override val impactState = _impactState.asStateFlow()
 
-    // ── 저주파 필터 상태값 ──────────────────────────────────────────
-    // 저주파 필터: 느리게 변하는 중력 성분만 남긴다
-    // α(알파)가 클수록 이전 값 비중이 높아 더 부드럽게 변함
-    // α=0.8 → 새 값을 20%만 반영 → 중력처럼 서서히 변하는 성분 추출에 적합
-    private val ALPHA = 0.8f
+    companion object {
+        // 저주파 필터: 느리게 변하는 중력 성분만 남긴다
+        // α(알파)가 클수록 이전 값 비중이 높아 더 부드럽게 변함
+        //
+        // 차량 충격 감지 용도이므로 α=0.99 사용:
+        //   - 급브레이크·급가속은 0.3~1 Hz 대역 → α가 낮으면 이 성분이 저주파 필터에
+        //     흡수되어 충돌 시 impactMagnitude가 실제보다 낮게 계산됨
+        //   - α=0.99 → 컷오프 ≈ 0.1 Hz, 시정수 ≈ 1.6s → 중력만 추적, 주행 동작은 걸러냄
+        //   - 단, 앱 시작 후 lowPass가 중력에 수렴하는 데 약 5초 워밍업 시간 발생
+        private const val ALPHA = 0.99f
+
+        // 충격 판정 임계값 (m/s²)
+        // 현재 테스트용으로 가변값 사용 중이라 사용 중 아님
+        private const val IMPACT_THRESHOLD = 80f
+
+        // 동일 충격이 연속으로 감지되는 것을 막기 위한 대기 시간 (ms)
+        private const val COOLDOWN_MS = 2000L
+    }
+
     private var lowPassX = 0f
     private var lowPassY = 0f
     private var lowPassZ = 0f
@@ -82,12 +95,8 @@ class SensorTestViewModel @Inject constructor(
     // 충격 판정 임계값 (m/s²): 중력 제거 후 순수 충격 성분 기준
     // 정지 시 0
     //! 실사용 시 고정값으로 설정, 현재 테스트용이라 수정 가능
-    override val IMPACT_THRESHOLD = 80f // 실사용 시 고정값
     private val _impactThreshold = MutableStateFlow(80f)
     override val impactThreshold = _impactThreshold.asStateFlow()
-
-    // 동일 충격이 연속으로 감지되는 것을 막기 위한 대기 시간 (ms)
-    private val COOLDOWN_MS = 2000L
     private var lastImpactTime = 0L
 
     override fun toggleUpdate() {
@@ -208,7 +217,6 @@ object FakeSensorTestViewModel : ISensorTestViewModel {
     override val magnetometer = MutableStateFlow(SensorData())
     override val rotationVector = MutableStateFlow(RotationData())
     override val impactState = MutableStateFlow(ImpactState())
-    override val IMPACT_THRESHOLD = 80f
     override val impactThreshold = MutableStateFlow(80f)
 
     override fun toggleUpdate() = Unit
