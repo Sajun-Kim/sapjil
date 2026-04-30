@@ -6,20 +6,29 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.sajun.sapjil.R
+import com.wedrive.designsystem.R as DR
 import com.sajun.sapjil.Route
 import com.sajun.sapjil.ui.theme.SapjilTheme
 import com.wedrive.core.composable.DoubleTapBackToExit
@@ -33,7 +42,8 @@ fun MainScreen(
 ) {
     val context = LocalContext.current
 
-    val callNumber = "119"
+    val callNumber = "01064077053"
+    val emergencyNumber = "119"
     val callLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -43,12 +53,12 @@ fun MainScreen(
         }
     }
 
-    fun call() {
+    fun call(number: String) {
         PermissionUtil.checkPermission(
             context = context,
             permissions = arrayOf(Manifest.permission.CALL_PHONE),
             onSuccess = {
-                val intent = Intent(Intent.ACTION_CALL, "tel:$callNumber".toUri())
+                val intent = Intent(Intent.ACTION_CALL, "tel:$number".toUri())
                 context.startActivity(intent)
             },
             onFailure = {
@@ -60,37 +70,105 @@ fun MainScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        PrimaryButton(
-            onClick = {
-                try {
-                    val intent = Intent(Intent.ACTION_DIAL, "tel:$callNumber".toUri())
-                    context.startActivity(intent)
-                } catch(e: Exception) {
-                    Timber.tag("callError").e(e)
-                }
-            },
-            text = "Dial test($callNumber)",
-            widthInDp = 120,
-            heightInDp = 40
+        Text(
+            text = "Dial Test",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
         )
         Spacer(Modifier.height(8.dp))
-        PrimaryButton(
-            onClick = { call() },
-            text = "Call test($callNumber)",
-            widthInDp = 120,
-            heightInDp = 40
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            PrimaryButton(
+                onClick = {
+                    try {
+                        val intent = Intent(Intent.ACTION_DIAL, "tel:$callNumber".toUri())
+                        context.startActivity(intent)
+                    } catch(e: Exception) {
+                        Timber.tag("callError").e(e)
+                    }
+                },
+                text = callNumber,
+                widthInDp = 200,
+                heightInDp = 40,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(4.dp))
+            PrimaryButton(
+                onClick = {
+                    try {
+                        val intent = Intent(Intent.ACTION_DIAL, "tel:$emergencyNumber".toUri())
+                        context.startActivity(intent)
+                    } catch(e: Exception) {
+                        Timber.tag("callError").e(e)
+                    }
+                },
+                text = emergencyNumber,
+                widthInDp = 200,
+                heightInDp = 40,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = colorResource(DR.color.neutral_010),
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+
+        Text(
+            text = "Call Test",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
         )
         Spacer(Modifier.height(8.dp))
-        PrimaryButton(
-            onClick = { navController.navigate(Route.TEST_SENSOR) },
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            PrimaryButton(
+                onClick = { call(callNumber) },
+                text = callNumber,
+                widthInDp = 200,
+                heightInDp = 40,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(4.dp))
+            PrimaryButton(
+                onClick = { call(emergencyNumber) },
+                text = emergencyNumber,
+                widthInDp = 200,
+                heightInDp = 40,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = colorResource(DR.color.neutral_010),
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+
+        Text(
             text = "Sensor Test",
-            widthInDp = 120,
-            heightInDp = 40
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
         )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            PrimaryButton(
+                onClick = { navController.navigate(Route.TEST_SENSOR) },
+                text = "Sensor Test",
+                widthInDp = 200,
+                heightInDp = 40,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.weight(1f))
+        }
     }
 
     DoubleTapBackToExit(toastMessageRes = R.string.back_exit_toast)
